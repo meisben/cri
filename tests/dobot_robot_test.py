@@ -6,7 +6,7 @@ import time
 
 import numpy as np
 
-from cri.robot import SyncRobot, AsyncRobot
+from cri.robot import SyncDobot, AsyncRobot
 from cri.controller import dobotMagicianController
 
 #np.set_printoptions(precision=2, suppress=True)
@@ -16,7 +16,7 @@ def main():
     base_frame = (0, 0, 0, 0, 0, 0)
     work_frame = (200, 0, 130, 0, 0, 0)     # base frame: x->front, y->right, z->up
     
-    with AsyncRobot(SyncRobot(dobotMagicianController())) as robot:
+    with AsyncRobot(SyncDobot(dobotMagicianController())) as robot:
     
         # Set TCP, linear speed,  angular speed and coordinate frame
         # robot.tcp = (0, 0, 89.1, 0, 0, 0)
@@ -27,6 +27,13 @@ def main():
         # Display robot info
         print("Robot info: {}".format(robot.info))
 
+        retVal = robot.sync_robot.controller.current_index()
+        print("Ret val: {}".format(retVal))
+        print("Ret val type: {}".format(type(retVal)))
+
+        print("attempting homing")
+        robot.sync_robot.perform_homing()
+        print("finish")
 
         robot.close()
 

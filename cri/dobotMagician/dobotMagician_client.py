@@ -58,6 +58,45 @@ class dobotMagicianClient:
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
+    def get_queued_cmd_current_index(self):
+        """ Returns the current movement index
+        """
+        currentIndex = dType.GetQueuedCmdCurrentIndex(self.api)[0]
+        return currentIndex
+
+    def set_home_params(self, pose):
+        """Sets home position
+        
+        pose = (x, y, z, qw, qx, qy, qz)
+        x, y, z specify a Euclidean position (default mm)
+        qw, qx, qy, qz specify a quaternion rotation
+        """
+
+        (x, y, z, qw, qx, qy, qz) = pose
+        vec, theta = quat2axangle([qw, qx, qy, qz])
+
+        if vec == np.array([0.,  0.,  1.]):
+            lastIndex = dType.SetHOMEParams(self.api, 250, 0, 50, 0, isQueued = 1)  # Set home position
+            return lastIndex
+        else:
+            raise Exception ("Pose has rotation about axis other than z, axis: {}".format(vec))
+     
+    def set_home_cmd(self):
+        """
+        """
+        #Queue homing function and return move number as last index
+        lastIndex = dType.SetHOMECmd(self.api, temp = 0, isQueued = 1)[0] # Execute the homing function. Note temp is not used by Dobot. Returned value is the last index -> "queuedCmdIndex: If this command is added to the queue, queuedCmdIndex indicates the index of this command in the queue. Otherwise, it is invalid."
+        return lastIndex
+
+    def get_alarms_state(self):
+        """returns a alarm identifier string
+        """       
+        alarms = dType.GetAlarmsState(self.api) #Get the alarms
+        alarmsState = alarms[0]
+        print("alarmsState: {} | {} | {} | {} | {} | {} | {} | {} ".format(alarmsState[0], alarmsState[1], alarmsState[2], alarmsState[3], alarmsState[4], alarmsState[5], alarmsState[6], alarmsState[7]))
+        return alarmsState
+
+
     def set_units(self, linear, angular):
         """Sets linear and angular units.
         """
@@ -92,44 +131,7 @@ class dobotMagicianClient:
             raise Exception ("Connection to dobot magician failed with error {}".format(CON_STR[state]))     
         
     
-    def set_home_position(self, pose):
-        """Sets home position
-        
-        pose = (x, y, z, qw, qx, qy, qz)
-        x, y, z specify a Euclidean position (default mm)
-        qw, qx, qy, qz specify a quaternion rotation
-        """
-
-        (x, y, z, qw, qx, qy, qz) = pose
-        vec, theta = quat2axangle([qw, qx, qy, qz])
-
-        if vec == np.array([0.,  0.,  1.]):
-            dType.SetHOMEParams(self.api, 250, 0, 50, 0, isQueued = 1)  # Set home position
-        else:
-            raise Exception ("Pose has rotation about axis other than z, axis: {}".format(vec))
-     
-    def get_alarms(self):
-        """returns a alarm identifier string
-        """       
-        alarms = dType.GetAlarmsState(self.api) #Get the alarms
-        alarmsState = alarms[0]
-        print("alarmsState: {} | {} | {} | {} | {} | {} | {} | {} ".format(alarmsState[0], alarmsState[1], alarmsState[2], alarmsState[3], alarmsState[4], alarmsState[5], alarmsState[6], alarmsState[7]))
-        return alarmsState
-
-    def perform_homing(self):
-        """
-        """
-        #Queue homing function
-        lastIndex = dType.SetHOMECmd(self.api, temp = 0, isQueued = 1)[0] # Execute the homing function. Note temp is not used by Dobot. Returned value is the last index -> "queuedCmdIndex: If this command is added to the queue, queuedCmdIndex indicates the index of this command in the queue. Otherwise, it is invalid."
-        print("ReturnHoming: {}".format(lastIndex))
-
-        #Execute commands up to homing function
-        dType.SetQueuedCmdStartExec(self.api) # Start running commands in command queue 
-        
-        while lastIndex > dType.GetQueuedCmdCurrentIndex(self.api)[0]: # Loop gets current index, and waits for the command queue to finish
-            dType.dSleep(100)
-
-        return True
+    
 
 
     def get_info(self):

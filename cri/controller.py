@@ -468,6 +468,27 @@ class dobotMagicianController(RobotController):
             self._client.close()
             raise
 
+    def current_index(self):
+        """ Returns the current movement index
+        """
+        return self._client.get_queued_cmd_current_index()
+
+    def set_home_params(self, pose):
+        """ Sets the pose for the home position of the robot arm
+        """
+        self._client.set_home_params(pose)
+
+    def move_home_position(self):
+        """ Performs the homing function and moves the arm to the home position
+        """
+        lastIndex = self._client.set_home_cmd()
+        return lastIndex
+
+    def alarms(self):
+        """ Get alarms state for robot arm
+        """
+        return self._client.get_alarms_state()
+
     @property
     def info(self):
         """Returns a unique robot identifier string.
@@ -477,7 +498,7 @@ class dobotMagicianController(RobotController):
         #         self._port,
         #         self._client.get_info(),
         #         )
-        return self._client.get_alarms()
+        return self._client.get_alarms_state()
 
     @property    
     def tcp(self):
