@@ -1,4 +1,7 @@
-# Common Robot Interface
+# Common Robot Interface (Fork for dobot magician)
+
+***Important Note**: This is a fork of the cri library from John Lloyd which will enable use for the dobot magician robot arm. To use the forked library download local files. Then create a virtual environment (e.g. using conda). The run pip install -e . in the local directory of cri setup.py*
+
 >Provides a common Python 3 programming interface for different robot arms.
 
 Common Robot Interface (CRI) currently supports ABB robot controllers, and UR controllers that implement the Real-Time Data Exchange (RTDE) protocol.
