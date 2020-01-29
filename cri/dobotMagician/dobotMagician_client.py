@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Python client interface for Dobot Magician.
 
-Adapted from [HOLD]
-
-version 1.0
-26 Jan 2020
+Version control
+v1.0 -> fork from john lloyd
+v1.1 -> Client interface is working for linear movements, joint angle movements (29 Jan 2020)
 """
 
 # ------------------------------------------#

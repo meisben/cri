@@ -1,8 +1,13 @@
 # Common Robot Interface (Fork for dobot magician)
 
-***Important Note**: This is a fork of the cri library from John Lloyd which will enable use for the dobot magician robot arm. To use the forked library download local files. Then create a virtual environment (e.g. using conda). The run pip install -e . in the local directory of cri setup.py*
+***Important Note***: This is a fork of the cri library from John Lloyd which will enable use for the dobot magician robot arm. To use the forked library download local files. Then create a virtual environment (e.g. using conda). The run pip install -e . in the local directory of cri setup.py
 
-***Furthermore**: to use the dobot dll follow these instructions [A] use the correct DLL from dobot (64 bit or 32 bit), and [B] but the dll in either the Anaconda root directory or the system root directory (%SystemRoot%\system32) whichever one works :)*
+***Installation of forked library for use with dobot magician arm***: 
+
+To use the dobot dll follow these instructions 
+- [A] use the correct DLL from dobot (64 bit or 32 bit), and
+- [B] put the dll in either the Anaconda root directory or the system root directory (%SystemRoot%\system32) whichever one works :)
+
 
 ---
 
