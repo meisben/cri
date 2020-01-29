@@ -41,6 +41,9 @@ def check_pose(pose):
     if len(pose) != 6:
         raise InvalidEulerPose
 
+def check_joint_angles_dobot(joint_angles):
+    if len(joint_angles) != 4:
+        raise Exception ("InvalidJointAngles for dobot input. joint_angles have value: {}".format(joint_angles))
 
 
 class Robot(ABC):
@@ -426,6 +429,8 @@ class SyncDobot(Robot):
     def blocking_command(self, commandFunction):
         """ Changes command into set of blocking commands
         """
+        self.start_command_queue() # Start to run the command queue
+
         # Queue command and query index value
         lastIndex = commandFunction
 
@@ -436,7 +441,8 @@ class SyncDobot(Robot):
             time.sleep(0.1)
             currentIndex = self.controller.current_index()
 
-        print("DEGBUG: ended function")
+        self.stop_command_queue() #Stop the command queue
+
         return lastIndex
 
     def set_home_params(self, pose):
@@ -455,6 +461,24 @@ class SyncDobot(Robot):
         """
         lastIndex = self.blocking_command(self.controller.perform_homing())
         return lastIndex
+
+    def clear_command_queue(self):
+        """Clears the command queue
+        """
+        retVal = self.controller.clear_command_queue()
+        return retVal
+
+    def start_command_queue(self):
+        """ Start to execute commands in the command queue
+        """
+        retVal = self.controller.start_command_queue()
+        return retVal
+    
+    def stop_command_queue(self):
+        """ Stop executing commands in the command queue
+        """
+        retVal = self.controller.stop_command_queue()
+        return retVal
 
     @property
     def info(self):
@@ -556,8 +580,10 @@ class SyncDobot(Robot):
     def move_joints(self, joint_angles):
         """Executes an immediate move to the specified joint angles.
         """
-        check_joint_angles(joint_angles)
-        self.controller.move_joints(joint_angles)
+        check_joint_angles_dobot(joint_angles)
+        lastIndex = self.blocking_command(self.controller.move_joints(joint_angles))
+        return lastIndex
+
     
     def move_linear(self, pose):
         """Executes a linear/cartesian move from the current TCP pose to the
@@ -566,9 +592,11 @@ class SyncDobot(Robot):
         check_pose(pose)
         pose_q = euler2quat(pose, self._axes)
         if self._is_base_frame:
-            self.controller.move_linear(pose_q)
+            lastIndex = self.blocking_command(self.controller.move_linear(pose_q))
         else:
-            self.controller.move_linear(inv_transform(pose_q, self._coord_frame_q))
+            lastIndex = self.blocking_command(self.controller.move_linear(inv_transform(pose_q, self._coord_frame_q)))
+        
+        return lastIndex
 
     def move_circular(self, via_pose, end_pose):
         """Executes a movement in a circular path from the current TCP pose,

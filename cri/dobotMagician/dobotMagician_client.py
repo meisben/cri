@@ -92,6 +92,24 @@ class dobotMagicianClient:
         currentIndex = dType.GetQueuedCmdCurrentIndex(self.api)[0]
         return currentIndex
 
+    def set_queued_cmd_clear(self):
+        """Clears the command queue
+        """
+        retVal = dType.SetQueuedCmdClear(self.api)
+        return retVal
+
+    def set_queued_cmd_start_exec(self):
+        """ Start to execute commands in the command queue
+        """
+        retVal = dType.SetQueuedCmdStartExec(self.api)
+        return retVal
+
+    def set_queued_cmd_stop_exec(self):
+        """ Stop executing commands in the command queue
+        """
+        retVal = dType.SetQueuedCmdStopExec(self.api)
+        return retVal
+
     def set_home_params(self, pose_q):
         """Sets home position
         
@@ -175,25 +193,16 @@ class dobotMagicianClient:
         # return info 
         pass
 
-    # def move_joints(self, joint_angles):
-    #     """Executes an immediate move to the specified joint angles.
+    def move_joints(self, joint_angles):
+        """Executes an immediate move to the specified joint angles.
         
-    #     pose = (x, y, z, qw, qx, qy, qz)
-    #     x, y, z specify a Euclidean position (default mm)
-    #     qw, qx, qy, qz specify a quaternion rotation
-    #     """
-    #     joint_angles = np.asarray(joint_angles, dtype=np.float32).ravel()
-    #     joint_angles *= self._scale_angle
-
-    #     command = 1
-    #     sendMsg = pack('>Hffffff', command, *joint_angles)
-    #     self.sock.send(sendMsg)
-    #     time.sleep(self._delay)
-    #     receiveMsg = self.sock.recv(4096)
-    #     retvals = unpack_from('>H', receiveMsg)
-    #     ack = retvals[0]
-    #     if ack != ABBClient.SERVER_OK:
-    #         raise ABBClient.CommandFailed  
+        pose = (x, y, z, qw, qx, qy, qz)
+        x, y, z specify a Euclidean position (default mm)
+        qw, qx, qy, qz specify a quaternion rotation
+        """
+        (j0,j1,j2,rz) = joint_angles
+        lastIndex = dType.SetPTPCmd(self.api, dType.PTPMode.PTPMOVLANGLEMode, j0, j1, j2, rz, isQueued = 1)[0] #linear trajectory, end position specified by joint angles 
+        return lastIndex
 
     def move_linear(self, pose_q):
         """Executes a linear/cartesian move from the current base frame pose to
@@ -206,7 +215,7 @@ class dobotMagicianClient:
         pose = quat2euler(pose_q,'sxyz')
         check_pose(pose) # Check pose is not invalid
         (x,y,z,rx,ry,rz) = pose
-        lastIndex = dType.SetPTPCmd(api, dType.PTPMode.PTPMOVLXYZMode, x, y, z, rz, isQueued = 1)[0] #linear movement
+        lastIndex = dType.SetPTPCmd(self.api, dType.PTPMode.PTPMOVLXYZMode, x, y, z, rz, isQueued = 1)[0] #linear trajectory, end position specified by pose
 
         return lastIndex      
 
@@ -351,25 +360,19 @@ class dobotMagicianClient:
     #     if ack != ABBClient.SERVER_OK:
     #         raise ABBClient.CommandFailed  
 
-    # def get_joint_angles(self):
-    #     """retvalsurns the robot joint angles.
+    def get_joint_angles(self):
+        """retvalsurns the robot joint angles.
         
-    #     joint_angles = (j0, j1, j2, j3, j4, j5)
-    #     j0, j1, j2, j3, j4, j5 are numbered from base to end effector and are
-    #     measured in degrees (default)
-    #     """       
-    #     command = 8
-    #     sendMsg = pack('>H', command)
-    #     self.sock.send(sendMsg)
-    #     time.sleep(self._delay)
-    #     receiveMsg = self.sock.recv(4096)
-    #     retvals = unpack_from('>Hffffff', receiveMsg)
-    #     ack = retvals[0]
-    #     if ack != ABBClient.SERVER_OK:
-    #         raise ABBClient.CommandFailed  
-    #     joint_angles = np.asarray(retvals[1:], dtype=np.float64)
-    #     joint_angles /= self._scale_angle
-    #     return joint_angles
+        joint_angles = (j0, j1, j2, j3, j4, j5)
+        j0, j1, j2, j3, j4, j5 are numbered from base to end effector and are
+        measured in degrees (default)
+        """       
+        dobotPose = dType.GetPose(self.api) #Get the pose (x,y,z,r, joint1,joint2,joint3,joint4)
+
+        [x,y,z,rz,j0,j1,j2,j3] = dobotPose #where j0->j3 are joint angles. j3 is the same as rz
+        joint_angles = (j0,j1,j2,j3) 
+        
+        return joint_angles
     
     def get_pose(self):
         """retvalsurns the TCP pose in the reference coordinate frame.
@@ -384,8 +387,8 @@ class dobotMagicianClient:
         """
         dobotPose = dType.GetPose(self.api) #Get the pose (x,y,z,r, joint1,joint2,joint3,joint4)
 
-        [x,y,z,r,jointAngle1,jointAngle2, jointAngle3, jointAngle4] = dobotPose
-        pose = (x,y,z,0,0,r) # Note that x and y rotations are always zero for 4 degree of freedom robot
+        [x,y,z,rz,j0,j1,j2,j3] = dobotPose #where j0->j3 are joint angles
+        pose = (x,y,z,0,0,rz) # Note that x and y rotations are always zero for 4 degree of freedom robot
 
         pose_q = euler2quat(pose,'sxyz')
         

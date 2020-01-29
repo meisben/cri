@@ -484,6 +484,24 @@ class dobotMagicianController(RobotController):
         lastIndex = self._client.set_home_cmd()
         return lastIndex
 
+    def clear_command_queue(self):
+        """Clears the command queue
+        """
+        retVal = self._client.set_queued_cmd_clear()
+        return retVal
+
+    def start_command_queue(self):
+        """ Start to execute commands in the command queue
+        """
+        retVal = self._client.set_queued_cmd_start_exec()
+        return retVal
+    
+    def stop_command_queue(self):
+        """ Stop executing commands in the command queue
+        """
+        retVal = self._client.set_queued_cmd_stop_exec()
+        return retVal
+
     def alarms(self):
         """ Get alarms state for robot arm
         """
@@ -583,8 +601,7 @@ class dobotMagicianController(RobotController):
     def joint_angles(self):
         """Returns the robot joint angles.
         """
-        # return self._client.get_joint_angles()
-        pass
+        return self._client.get_joint_angles()
 
     @property
     def pose(self):
@@ -596,15 +613,16 @@ class dobotMagicianController(RobotController):
     def move_joints(self, joint_angles):
         """Executes an immediate move to the specified joint angles.
         """
-        # self._client.move_joints(joint_angles)
-        pass
+        lastIndex = self._client.move_joints(joint_angles)
+        return lastIndex
 
     def move_linear(self, pose):
         """Executes a linear/cartesian move from the current base frame pose to
         the specified pose.
         """
-        # self._client.move_linear(pose)
-        pass
+        lastIndex = self._client.move_linear(pose)
+        return lastIndex
+        
 
     def move_circular(self, via_pose, end_pose):
         """Executes a movement in a circular path from the current base frame
