@@ -27,21 +27,35 @@ def main():
         # Display robot info
         print("Robot info: {}".format(robot.info))
 
-        retVal = robot.sync_robot.controller.current_index()
-        print("Ret val: {}".format(retVal))
-        print("Ret val type: {}".format(type(retVal)))
+        # retVal = robot.sync_robot.controller.current_index()
+        # print("Ret val: {}".format(retVal))
+        # print("Ret val type: {}".format(type(retVal)))
 
-        print("attempting homing")
-        robot.sync_robot.perform_homing()
-        print("finish")
+        robot.coord_frame = base_frame
 
-        robot.close()
+
+        print("Hi a")
+        robot.sync_robot.set_home_params((250, 0, 50, 0, 0, 50))
+        print("Hi b")
+
+
+        
+
+        # print("attempting homing")
+        # robot.sync_robot.perform_homing()
+        # print("finish")
+
+
 
         # Display initial joint angles
         # print("Initial joint angles: {}".format(robot.joint_angles))
 
+        
         # # Display initial pose in work frame
-        # print("Initial pose in work frame: {}".format(robot.pose))
+        print("Initial pose in work frame: {}".format(robot.pose))
+
+        robot.close()
+
         
         # # Move to origin of work frame
         # print("Moving to origin of work frame ...")

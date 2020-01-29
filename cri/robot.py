@@ -439,11 +439,21 @@ class SyncDobot(Robot):
         print("DEGBUG: ended function")
         return lastIndex
 
+    def set_home_params(self, pose):
+        """ Sets the pose for the home position of the robot arm
+        """
+        check_pose(pose)
+        pose_q = euler2quat(pose, self._axes)
+
+        if self._is_base_frame:
+            self.controller.set_home_params(pose_q)
+        else:
+            self.controller.set_home_params(inv_transform(pose_q, self._coord_frame_q))
 
     def perform_homing(self):
         """ Performs homing with the dobot magician
         """
-        lastIndex = self.blocking_command(self.controller.move_home_position())
+        lastIndex = self.blocking_command(self.controller.perform_homing())
         return lastIndex
 
     @property

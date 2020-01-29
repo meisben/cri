@@ -478,7 +478,7 @@ class dobotMagicianController(RobotController):
         """
         self._client.set_home_params(pose)
 
-    def move_home_position(self):
+    def perform_homing(self):
         """ Performs the homing function and moves the arm to the home position
         """
         lastIndex = self._client.set_home_cmd()
@@ -590,8 +590,8 @@ class dobotMagicianController(RobotController):
     def pose(self):
         """Returns the TCP pose in the reference coordinate frame.
         """
-        # return self._client.get_pose()
-        pass
+        return self._client.get_pose()
+        
 
     def move_joints(self, joint_angles):
         """Executes an immediate move to the specified joint angles.

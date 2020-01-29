@@ -14,7 +14,7 @@ version 1.0
 import time
 import numpy as np
 from cri.dobotMagician.dll_files import DobotDllType as dType # Import the dobot dll
-import transforms3d # For angle manipulations
+from cri.transforms import euler2quat, quat2euler, transform, inv_transform
 
 # ------------------------------------------#
 # Variables                                 #
@@ -26,6 +26,34 @@ CON_STR = {
     dType.DobotConnect.DobotConnect_NotFound: "DobotConnect_NotFound",
     dType.DobotConnect.DobotConnect_Occupied: "DobotConnect_Occupied"} #a dictionary of error terms as defined a C++ enum in 'DobotType.h file'
 
+#Workspace limits (gross error catching)
+max_x_lim = 350 #mm
+min_x_lim = 0
+max_y_lim = 350
+min_y_lim = -350
+max_z_lim = 200
+min_z_lim = -200
+
+# ------------------------------------------#
+# Helper functions                          #
+# ------------------------------------------#
+
+def check_pose(pose):
+    #Check if pose is outside of workspace limits
+    if pose[0] > max_x_lim or pose[0] < min_x_lim:
+        raise Exception ("Pose value for x-axis outside limits, value for euler pose {}".format(pose)) 
+    elif pose[1] > max_y_lim or pose[1] < min_y_lim:
+        raise Exception ("Pose value for y-axis outside limits, value for euler pose {}".format(pose))
+    elif pose[2] > max_z_lim or pose[2] < min_z_lim:
+        raise Exception ("Pose value for y-axis outside limits, value for euler pose {}".format(pose))
+    
+    #Check if pose involves a invalid rotation
+    if pose[3] != 0 or pose[4] != 0:
+        raise Exception ("Pose value includes invalid rotation, value for euler pose {}".format(pose)) 
+
+# ------------------------------------------#
+# Main client class                         #
+# ------------------------------------------#
 
 class dobotMagicianClient:
     """Python client interface for Dobot Magician
@@ -64,22 +92,19 @@ class dobotMagicianClient:
         currentIndex = dType.GetQueuedCmdCurrentIndex(self.api)[0]
         return currentIndex
 
-    def set_home_params(self, pose):
+    def set_home_params(self, pose_q):
         """Sets home position
         
-        pose = (x, y, z, qw, qx, qy, qz)
+        pose_q = (x, y, z, qw, qx, qy, qz)
         x, y, z specify a Euclidean position (default mm)
         qw, qx, qy, qz specify a quaternion rotation
         """
+        pose = quat2euler(pose_q,'sxyz')
+        check_pose(pose) # Check pose is not invalid
+        (x,y,z,rx,ry,rz) = pose
 
-        (x, y, z, qw, qx, qy, qz) = pose
-        vec, theta = quat2axangle([qw, qx, qy, qz])
-
-        if vec == np.array([0.,  0.,  1.]):
-            lastIndex = dType.SetHOMEParams(self.api, 250, 0, 50, 0, isQueued = 1)  # Set home position
-            return lastIndex
-        else:
-            raise Exception ("Pose has rotation about axis other than z, axis: {}".format(vec))
+        lastIndex = dType.SetHOMEParams(self.api, x, y, z, rz, isQueued = 1)  # Set home position
+        return lastIndex
      
     def set_home_cmd(self):
         """
@@ -170,26 +195,20 @@ class dobotMagicianClient:
     #     if ack != ABBClient.SERVER_OK:
     #         raise ABBClient.CommandFailed  
 
-    # def move_linear(self, pose):
-    #     """Executes a linear/cartesian move from the current base frame pose to
-    #     the specified pose.
+    def move_linear(self, pose_q):
+        """Executes a linear/cartesian move from the current base frame pose to
+        the specified pose.
         
-    #     pose = (x, y, z, qw, qx, qy, qz)
-    #     x, y, z specify a Euclidean position (default mm)
-    #     qw, qx, qy, qz specify a quaternion rotation
-    #     """
-    #     pose = np.asarray(pose, dtype=np.float32).ravel()
-    #     pose[:3] *= self._scale_linear
-        
-    #     command = 2
-    #     sendMsg = pack('>Hfffffff', command, *pose)
-    #     self.sock.send(sendMsg)
-    #     time.sleep(self._delay)
-    #     receiveMsg = self.sock.recv(4096)
-    #     retvals = unpack_from('>H', receiveMsg)
-    #     ack = retvals[0]
-    #     if ack != ABBClient.SERVER_OK:
-    #         raise ABBClient.CommandFailed       
+        pose = (x, y, z, qw, qx, qy, qz)
+        x, y, z specify a Euclidean position (default mm)
+        qw, qx, qy, qz specify a quaternion rotation
+        """
+        pose = quat2euler(pose_q,'sxyz')
+        check_pose(pose) # Check pose is not invalid
+        (x,y,z,rx,ry,rz) = pose
+        lastIndex = dType.SetPTPCmd(api, dType.PTPMode.PTPMOVLXYZMode, x, y, z, rz, isQueued = 1)[0] #linear movement
+
+        return lastIndex      
 
     # def move_circular(self, via_pose, end_pose):
     #     """Executes a movement in a circular path from the current base frame
@@ -352,25 +371,25 @@ class dobotMagicianClient:
     #     joint_angles /= self._scale_angle
     #     return joint_angles
     
-    # def get_pose(self):
-    #     """retvalsurns the TCP pose in the reference coordinate frame.
+    def get_pose(self):
+        """retvalsurns the TCP pose in the reference coordinate frame.
         
-    #     pose = (x, y, z, qw, qx, qy, qz)
-    #     x, y, z specify a Euclidean position (default mm)
-    #     qw, qx, qy, qz specify a quaternion rotation
-    #     """
-    #     command = 9
-    #     sendMsg = pack('>H', command)
-    #     self.sock.send(sendMsg)
-    #     time.sleep(self._delay)
-    #     receiveMsg = self.sock.recv(4096)
-    #     retvals = unpack_from('>Hfffffff', receiveMsg)
-    #     ack = retvals[0]
-    #     if ack != ABBClient.SERVER_OK:
-    #         raise ABBClient.CommandFailed  
-    #     pose = np.asarray(retvals[1:], dtype=np.float64)
-    #     pose[:3] /= self._scale_linear      
-    #     return pose
+        pose = (x, y, z, qw, qx, qy, qz)
+        x, y, z specify a Euclidean position (default mm)
+        qw, qx, qy, qz specify a quaternion rotation
+
+        note that Dobot Magician will return initial pose in form:
+        dobotPose = [x,y,z,r,jointAngle1,jointAngle2, jointAngle3, jointAngle4]
+        where r is the rotation of the end effector relative to the world frame
+        """
+        dobotPose = dType.GetPose(self.api) #Get the pose (x,y,z,r, joint1,joint2,joint3,joint4)
+
+        [x,y,z,r,jointAngle1,jointAngle2, jointAngle3, jointAngle4] = dobotPose
+        pose = (x,y,z,0,0,r) # Note that x and y rotations are always zero for 4 degree of freedom robot
+
+        pose_q = euler2quat(pose,'sxyz')
+        
+        return pose_q
         
     def close(self):
         """Releases any resources held by the controller (e.g., sockets). And disconnects from Dobot magician
