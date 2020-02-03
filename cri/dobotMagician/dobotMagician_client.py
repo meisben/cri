@@ -135,7 +135,9 @@ class dobotMagicianClient:
         """       
         alarms = dType.GetAlarmsState(self.api) #Get the alarms
         alarmsState = alarms[0]
-        print("alarmsState: {} | {} | {} | {} | {} | {} | {} | {} ".format(alarmsState[0], alarmsState[1], alarmsState[2], alarmsState[3], alarmsState[4], alarmsState[5], alarmsState[6], alarmsState[7]))
+        lenAlarms = alarms[1]
+        print("alarms Length = {}".format(lenAlarms))
+        print("alarmsState: {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} ".format(alarmsState[0], alarmsState[1], alarmsState[2], alarmsState[3], alarmsState[4], alarmsState[5], alarmsState[6], alarmsState[7],alarmsState[8], alarmsState[9], alarmsState[10], alarmsState[11], alarmsState[12], alarmsState[13], alarmsState[14], alarmsState[15]))
         return alarmsState
 
 
