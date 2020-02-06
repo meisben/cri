@@ -17,19 +17,30 @@ def main():
     work_frame = (200, 0, 80, 0, 0, 0)     # base frame: x->front, y->right, z->up
     
     with AsyncRobot(SyncDobot(dobotMagicianController())) as robot:
+
+        tcp_test1 = robot.tcp
+        print("tcp_test1", tcp_test1)
     
         # Set TCP, linear speed,  angular speed and coordinate frame
-        # robot.tcp = (0, 0, 89.1, 0, 0, 0)
-        # robot.linear_speed = 50
-        # robot.angular_speed = 5
-        robot.coord_frame = work_frame
-        
-        # Display robot info
-        print("Robot info: {}".format(robot.info))
+        robot.tcp = (20, 10, 2.0, 0, 0, 0)
+        # # robot.linear_speed = 50
+        # # robot.angular_speed = 5
+        # robot.coord_frame = work_frame
 
-        # retVal = robot.sync_robot.controller.current_index()
-        # print("Ret val: {}".format(retVal))
-        # print("Ret val type: {}".format(type(retVal)))
+        tcp_test2 = robot.tcp
+        print("tcp_test2", tcp_test2)
+
+        print("do something")
+
+        tcp_test3 = robot.tcp
+        print("tcp_test3", tcp_test3)
+        
+        # # Display robot info
+        # print("Robot info: {}".format(robot.info))
+
+        # # retVal = robot.sync_robot.controller.current_index()
+        # # print("Ret val: {}".format(retVal))
+        # # print("Ret val type: {}".format(type(retVal)))
 
 
         # # Set base frame for storing home position

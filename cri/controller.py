@@ -482,7 +482,7 @@ class dobotMagicianController(RobotController):
         """ Performs the homing function and moves the arm to the home position
         """
         lastIndex = self._client.set_home_cmd()
-        return lastIndex
+        return lastIndex # return the last movement index of this command
 
     def clear_command_queue(self):
         """Clears the command queue
@@ -522,16 +522,15 @@ class dobotMagicianController(RobotController):
     def tcp(self):
         # """Returns the tool center point (TCP) of the robot.
         # """
-        # return self._tcp
-        pass
+        return self._client.get_tcp()
 
     @tcp.setter    
     def tcp(self, tcp):
         """Sets the tool center point (TCP) of the robot.
         """
-        # self._client.set_tcp(tcp)
-        # self._tcp = tcp
-        pass
+        lastIndex = self._client.set_tcp(tcp)
+        self._tcp = tcp
+        return lastIndex
 
     @property
     def linear_speed(self):

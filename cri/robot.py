@@ -509,7 +509,13 @@ class SyncDobot(Robot):
         """Sets the tool center point (TCP) of the robot.
         """
         check_pose(tcp)
-        self.controller.tcp = euler2quat(tcp, self._axes)
+        print("tcp received: ", tcp)
+        tcp_q = euler2quat(tcp, self._axes)
+        print("tcp_q received: ", tcp_q)
+
+        self.controller.tcp = tcp_q
+
+        #self.controller.tcp = euler2quat(tcp, self._axes)
 
     @property
     def coord_frame(self):

@@ -121,7 +121,7 @@ class dobotMagicianClient:
         (x,y,z,rx,ry,rz) = pose
 
         lastIndex = dType.SetHOMEParams(self.api, x, y, z, rz, isQueued = 1)  # Set home position
-        return lastIndex
+        return lastIndex # Return the last movement index for this command
      
     def set_home_cmd(self):
         """
@@ -243,29 +243,59 @@ class dobotMagicianClient:
     #     if ack != ABBClient.SERVER_OK:
     #         raise ABBClient.CommandFailed  
 
-    # def set_tcp(self, tcp):
-    #     """Sets the tool center point (TCP) of the robot.
+    def set_tcp(self, tcp_q):
+        """Sets the tool center point (TCP) of the robot.
         
-    #     The TCP is specified in the output flange frame, which is located at
-    #     the intersection of the tool flange center axis and the flange face,
-    #     with the z-axis aligned with the tool flange center axis.
+        The TCP is specified in the output flange frame, which is located according
+        to the dobot magician user manual.
         
-    #     tcp = (x, y, z, qw, qx, qy, qz)
-    #     x, y, z specify a Euclidean position (default mm)
-    #     qw, qx, qy, qz specify a quaternion rotation
-    #     """
-    #     tcp = np.asarray(tcp, dtype=np.float32).ravel()
-    #     tcp[:3] *= self._scale_linear
+        As passed to function ..
+        tcp = (x, y, z, qw, qx, qy, qz)
+        x, y, z specify a Euclidean position (default mm)
+        qw, qx, qy, qz specify a quaternion rotation
+
+        For dobot magician ...
+        tcp = [x, y, z]
+        x, y, z specify a Euclidean position ( mm)
+        """
+        # Note that this command is not working as per the dobot
+        # API and I will need to implment this functionality myself further
+        # down the line
+
+        tcp = quat2euler(tcp_q,'sxyz')
+        check_pose(tcp) # Check tcp is not invalid
+        (x,y,z,rx,ry,rz) = tcp
+
+        print("Received x:{}, y{}:, z: {}".format(x,y,z))
+
+        lastIndex = dType.SetEndEffectorParams(self.api, x, y, z, isQueued = 1)[0] #tcp end position specified as x,y,z distance
+
+        return lastIndex
+
+    def get_tcp(self):
+        """Gets the tool center point (TCP) of the robot. 
+        Note that for the dobot this is stored onboard the robot control board in temporary memory.
         
-    #     command = 4
-    #     sendMsg = pack('>Hfffffff', command, *tcp)
-    #     self.sock.send(sendMsg)
-    #     time.sleep(self._delay)
-    #     receiveMsg = self.sock.recv(4096)
-    #     retvals = unpack_from('>H', receiveMsg)
-    #     ack = retvals[0]
-    #     if ack != ABBClient.SERVER_OK:
-    #         raise ABBClient.CommandFailed  
+        The TCP is specified in the output flange frame, which is located according
+        to the dobot magician user manual.
+        
+        For dobot magician ...
+        tcp = [x, y, z]
+        x, y, z specify a Euclidean position ( mm)
+
+        This is returned as 
+        tcp = (x, y, z, qw, qx, qy, qz)
+        x, y, z specify a Euclidean position (default mm)
+        qw, qx, qy, qz specify a quaternion rotation (all zero)
+        """
+        [x,y,z] = dType.GetEndEffectorParams(self.api) #linear trajectory, end position specified by pose
+
+        print("tcp x:{}, y: {}, z: {}".format(x,y,z))
+
+        tcp = (x,y,z,0,0,0) # Note that rotations are always zero for tcp for 4 dof robot
+        tcp_q = euler2quat(tcp,'sxyz') #convert to quaternion rotation
+
+        return tcp_q
 
     # def set_work_object(self, work_object):
     #     """Sets the work object on the robot.
