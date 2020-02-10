@@ -460,10 +460,12 @@ class dobotMagicianController(RobotController):
         self._port = port
         self._client = dobotMagicianClient(port, baudRate)
         try:
-            self.tcp = (0, 0, 0, 1, 0, 0, 0)    # base frame (quaternion)
-            self.linear_speed = 20              # mm/s
-            self.angular_speed = 20             # deg/s
-            self.blend_radius = 0               # mm
+            pass
+            ## self.tcp = (0, 0, 0, 1, 0, 0, 0)    # base frame (quaternion)
+            # self.linear_speed = 50              # mm/s
+            # self.angular_speed = 50             # deg/s
+            ## self.blend_radius = 0               # mm
+
         except:
             self._client.close()
             raise
@@ -537,7 +539,7 @@ class dobotMagicianController(RobotController):
         """Returns the linear speed of the robot TCP (mm/s).
         """
         # return self._linear_speed
-        pass
+        return self._client.get_speed_linear
 
     @linear_speed.setter
     def linear_speed(self, speed):
@@ -552,14 +554,15 @@ class dobotMagicianController(RobotController):
         #     self._client.set_speed(linear_speed=speed,
         #                            angular_speed=self._angular_speed)
         # self._linear_speed = speed
-        pass
+        lastIndex = self._client.set_speed_linear(speed)
+        return lastIndex
 
     @property
     def angular_speed(self):
         """Returns the angular speed of the robot TCP (deg/s).
         """
         # return self._angular_speed
-        pass
+        return self._client.get_speed_angular
 
     @angular_speed.setter
     def angular_speed(self, speed):
@@ -574,7 +577,8 @@ class dobotMagicianController(RobotController):
         #     self._client.set_speed(linear_speed=self._linear_speed,
         #                            angular_speed=speed)
         # self._angular_speed = speed
-        pass
+        lastIndex = self._client.set_speed_angular(speed)
+        return lastIndex
 
     @property
     def blend_radius(self):

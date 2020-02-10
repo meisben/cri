@@ -50,6 +50,11 @@ def check_pose(pose):
     if pose[3] != 0 or pose[4] != 0:
         raise Exception ("Pose value includes invalid rotation, value for euler pose {}".format(pose)) 
 
+def all_same(items):
+    """Check if all items in a list are the same
+    """
+    return all(x == items[0] for x in items)
+
 # ------------------------------------------#
 # Main client class                         #
 # ------------------------------------------#
@@ -266,9 +271,9 @@ class dobotMagicianClient:
         check_pose(tcp) # Check tcp is not invalid
         (x,y,z,rx,ry,rz) = tcp
 
-        print("Received x:{}, y{}:, z: {}".format(x,y,z))
+        print("*TCP SET CALLED* Received x:{}, y{}:, z: {}".format(x,y,z))
 
-        lastIndex = dType.SetEndEffectorParams(self.api, x, y, z, isQueued = 1)[0] #tcp end position specified as x,y,z distance
+        lastIndex = dType.SetEndEffectorParams(self.api, x, y, z, isQueued = 0)[0] #tcp end position specified as x,y,z distance
 
         return lastIndex
 
@@ -288,7 +293,7 @@ class dobotMagicianClient:
         x, y, z specify a Euclidean position (default mm)
         qw, qx, qy, qz specify a quaternion rotation (all zero)
         """
-        [x,y,z] = dType.GetEndEffectorParams(self.api) #linear trajectory, end position specified by pose
+        [x,y,z] = dType.GetEndEffectorParams(self.api) #End effector position specified by pose
 
         print("tcp x:{}, y: {}, z: {}".format(x,y,z))
 
@@ -320,22 +325,112 @@ class dobotMagicianClient:
     #     if ack != ABBClient.SERVER_OK:
     #         raise ABBClient.CommandFailed       
 
-    # def set_speed(self, linear_speed, angular_speed):
-    #     """Sets the linear speed (default mm/s) and angular speed
-    #     (default deg/s) of the robot TCP.
-    #     """
-    #     linear_speed *= self._scale_linear
-    #     angular_speed *= self._scale_angle
+    def set_speed(self, linear_speed, angular_speed):
+        """Sets the linear speed (default mm/s) and angular speed
+        (default deg/s) of the robot TCP.
+        """
+        linear_speed *= self._scale_linear
+        angular_speed *= self._scale_angle
 
-    #     command = 6
-    #     sendMsg = pack('>Hff', command, linear_speed, angular_speed)
-    #     self.sock.send(sendMsg)
-    #     time.sleep(self._delay)
-    #     receiveMsg = self.sock.recv(4096)
-    #     retvals = unpack_from('>H', receiveMsg)
-    #     ack = retvals[0]
-    #     if ack != ABBClient.SERVER_OK:
-    #         raise ABBClient.CommandFailed     
+        command = 6
+        sendMsg = pack('>Hff', command, linear_speed, angular_speed)
+        self.sock.send(sendMsg)
+        time.sleep(self._delay)
+        receiveMsg = self.sock.recv(4096)
+        retvals = unpack_from('>H', receiveMsg)
+        ack = retvals[0]
+        if ack != ABBClient.SERVER_OK:
+            raise ABBClient.CommandFailed
+
+    def set_speed_linear(self, linear_speed):
+        """Sets the linear speed (default 200 mm/s)
+        """
+        if linear_speed > 250 or linear_speed < 5:
+            raise Exception("Speed value provided is out of bounds (5-250 mm/s)")
+
+        # User specified value
+        xyz_Vel = linear_speed # (mm/s)
+        # Dobot default values
+        xyz_Acc = 200 # (mm/s ^2)
+        r_Vel = 100 # (?units) -> presume (deg/s)
+        r_Acc = 100 # (?units) -> presume (deg/s^2)
+        
+        # Set parameters using dobot API and return last index
+        lastIndex = dType.SetPTPCoordinateParams(self.api, xyz_Vel, xyz_Acc, r_Vel, r_Acc, isQueued = 0)[0]
+        return lastIndex
+
+    def get_speed_linear(self):
+        """Gets the linear speed of the robot TCP.
+
+        Note: returned parameters are as follows from dobot dll command
+        [xyz_Vel,r_Vel,xyz_Acc,r_Acc] = xyz Velocity, r axis velocity (rotation of joint 4), xyz Acceleration, r axis acceleration
+        Please note accelerations are not returned. Defaults are used for accelerations
+
+        --Defaults--
+        xyz default speed = 200 mm/s
+        xyz default acceleration = 200 mm/s^2
+        r axis default speed = 100
+        r axis default acceleration = 100
+
+        """
+        [xyz_Vel,r_Vel,xyz_Acc,r_Acc] = dType.GetPTPCoordinateParams(self.api) #End effector position specified by pose
+
+        print("xyz velocity (mm/s): {}".format(xyz_Vel))
+        print("r axis velocity (?units): {}".format(r_Vel))
+        print("xyz acceleration (mm/s^2): {}".format(xyz_Acc))
+        print("r axis accelration (?units): {}".format(r_Acc))
+
+        return xyz_Vel
+
+    def set_speed_angular(self, angular_speed):
+        """Sets the angular speed (default 200 deg/s)
+        """
+        if angular_speed > 250 or angular_speed < 5:
+            raise Exception("Speed value provided is out of bounds (5-250 deg/s)")
+
+        # User specified value
+        j1_Vel,j2_Vel,j3_Vel,j4_Vel = angular_speed, angular_speed, angular_speed, angular_speed # (deg/s)
+        # Dobot default values
+        j1_Acc,j2_Acc,j3_Acc,j4_Acc = 200, 200, 200, 200 # (deg/s ^2)
+
+        # Set parameters using dobot API and return last index
+        lastIndex = dType.SetPTPJointParams(self.api, j1_Vel, j1_Acc, j2_Vel, j2_Acc, j3_Vel, j3_Acc, j4_Vel, j4_Acc, isQueued = 0)[0]
+        return lastIndex
+
+
+    def get_speed_angular(self):
+        """Gets the angular speed of the robot TCP.
+
+        Note: returned parameters are as follows from dobot dll command
+        [j1_Vel,j1_Acc,j2_Vel,j2_Acc,j3_Vel,j3_Acc,j4_Vel,j4_Acc] = join1 Velocity, joint1 Acceleration ... etc.
+        Please note accelerations are not returned. Defaults are used for accelerations
+        Only a single value is returned. This wrapper assumes all joints use same velocities
+
+        --Defaults--
+        joint velocity = 200 deg/s
+        joint acceleration = 200 deg/s^2
+        """
+        
+        parameters = dType.GetPTPJointParams(self.api) #End effector position specified by pose
+        [j1_Vel,j1_Acc,j2_Vel,j2_Acc,j3_Vel,j3_Acc,j4_Vel,j4_Acc] = parameters
+        
+        # Check that all velocities and accelerations are the same
+        velocities = parameters[::2]
+        accelerations = parameters[1::2]
+
+        if not all_same(velocities):
+            raise Exception("Warning: velocities are not same for all joints. Suggest running command set_speed")
+
+        if not all_same(accelerations):
+            raise Exception("Warning: Accelerations are not same for all joints, this isn't default dobot magician settings. You can suppress this exception if you think this isn't an issue")
+
+        print("joint velocities (deg/s): {}".format(j1_Vel))
+        print("joint accelerations (deg/s^2): {}".format(j1_Acc))
+
+        return j1_Vel
+
+
+
 
     # def set_zone(self, 
     #              zone_key = 'z0', 

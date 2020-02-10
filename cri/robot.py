@@ -509,13 +509,9 @@ class SyncDobot(Robot):
         """Sets the tool center point (TCP) of the robot.
         """
         check_pose(tcp)
-        print("tcp received: ", tcp)
         tcp_q = euler2quat(tcp, self._axes)
-        print("tcp_q received: ", tcp_q)
-
+        print("note currently the dobot magician tcp functionality doesn't work (product bug). Issue on punch list (Ben Money-Coomes 6th Feb 2020)")
         self.controller.tcp = tcp_q
-
-        #self.controller.tcp = euler2quat(tcp, self._axes)
 
     @property
     def coord_frame(self):
@@ -535,7 +531,7 @@ class SyncDobot(Robot):
     def linear_speed(self):
         """Returns the linear speed of the robot TCP (mm/s).
         """
-        return self.controller.linear_speed
+        return self.controller.linear_speed()
 
     @linear_speed.setter
     def linear_speed(self, speed):
@@ -547,7 +543,7 @@ class SyncDobot(Robot):
     def angular_speed(self):
         """Returns the angular speed of the robot TCP (deg/s).
         """
-        return self.controller.angular_speed
+        return self.controller.angular_speed()
 
     @angular_speed.setter
     def angular_speed(self, speed):

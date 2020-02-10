@@ -18,22 +18,32 @@ def main():
     
     with AsyncRobot(SyncDobot(dobotMagicianController())) as robot:
 
-        tcp_test1 = robot.tcp
-        print("tcp_test1", tcp_test1)
+        speed_test1 = robot.linear_speed
+        print("speed_test1 (mm/s)", speed_test1)
+
+        angular_speed_test1 = robot.angular_speed
+        print("angular_speed_test1 (deg/s)", angular_speed_test1)
     
         # Set TCP, linear speed,  angular speed and coordinate frame
         robot.tcp = (20, 10, 2.0, 0, 0, 0)
-        # # robot.linear_speed = 50
-        # # robot.angular_speed = 5
+        # robot.linear_speed = 100
+        # robot.angular_speed = 100
         # robot.coord_frame = work_frame
+
+
+        speed_test2 = robot.linear_speed
+        print("speed_test2 (mm/s)", speed_test2)
+
+        angular_speed_test2 = robot.angular_speed
+        print("angular_speed_test2 (deg/s)", angular_speed_test2)
 
         tcp_test2 = robot.tcp
         print("tcp_test2", tcp_test2)
 
-        print("do something")
+        # print("do something")
 
-        tcp_test3 = robot.tcp
-        print("tcp_test3", tcp_test3)
+        # tcp_test3 = robot.tcp
+        # print("tcp_test3", tcp_test3)
         
         # # Display robot info
         # print("Robot info: {}".format(robot.info))
